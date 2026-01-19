@@ -11,9 +11,9 @@ void setup() {
   Serial.begin(9600);
 
   bme.begin();
-  mySensor.beginAccel();
+  //mySensor.beginAccel();
   mySensor.beginGyro();
-  mySensor.beginMag();
+  //mySensor.beginMag();
 
   // You can set your own offset for mag values
   // mySensor.magXOffset = -50;
@@ -29,14 +29,16 @@ void setup() {
 }
 
 
+float oldGX, oldGY, oldGZ;
+
 void loop() {
 
-  if (mySensor.accelUpdate() == 0) {
-    aX = mySensor.accelX();
-    aY = mySensor.accelY();
-    aZ = mySensor.accelZ();
+  //if (mySensor.accelUpdate() == 0) {
+    //aX = mySensor.accelX();
+    //aY = mySensor.accelY();
+    //aZ = mySensor.accelZ();
    
-  }
+  //}
   
   if (mySensor.gyroUpdate() == 0) {
     gX = mySensor.gyroX();
@@ -50,7 +52,16 @@ void loop() {
     Serial.println("\tgX: " + String(gX));
     Serial.println("\tgY: " + String(gY));
     Serial.println("\tgZ: " + String(gZ));
-    
+
+    Serial.println("\tdeltaX: " + String(gX - oldGX));
+    Serial.println("\tdeltaY: " + String(gY - oldGY));
+    Serial.println("\tdeltaZ: " + String(gZ - oldGZ));
+
+
+    oldGX = gX;
+    oldGY = gY;
+    oldGZ = gZ;
+  
     
   }
   
@@ -70,6 +81,6 @@ void loop() {
 
   //Serial.print("\tApproxAltitude(m): ");
   //Serial.print(bme.readAltitude(1013.25)); // this should be adjusted to your local forcase
-  delay(1000);
+  delay(10000);
   //Serial.println(""); // Add an empty line. This text was added here from my tablet.
   }
