@@ -7,6 +7,10 @@ Adafruit_BMP280 bme; // I2C
 MPU9250_asukiaaa mySensor;
 float aX, aY, aZ, aSqrt, gX, gY, gZ, mDirection, mX, mY, mZ;
 
+float offSetX = 0.77; //ezt vonva ki a gX böl
+float offSetY = 3.44; //ezt vonva ki a gY bol
+float offSetZ = 0.40; //ezt vonva ki a gZ böl
+
 float minX, maxX, minY, maxY, minZ, maxZ;
 
 void setup() {
@@ -40,7 +44,10 @@ void setup() {
 
 }
 
-int amaount;
+float averageX, averageY, averageZ;
+int count;
+
+int amount;
 bool canLoop = true;
 
 float oldGX, oldGY, oldGZ;
@@ -54,7 +61,7 @@ void loop() {
    
   //}
   
-  if (amaount <= 1000) {
+  if (amount <= 1000) {
     if (mySensor.gyroUpdate() == 0) {
       gX = mySensor.gyroX();
       gY = mySensor.gyroY();
@@ -76,6 +83,10 @@ void loop() {
       Serial.println("\tdeltaY: " + String(gY - oldGY));
       Serial.println("\tdeltaZ: " + String(gZ - oldGZ));
       */
+
+      gX -= offSetX;
+      gY -= offSetY;
+      gZ -= offSetZ;
 
 
       oldGX = gX;
@@ -101,10 +112,13 @@ void loop() {
         minZ = gZ;
       }
       
-      
+      averageX += gX;
+      averageY += gY;
+      averageZ += gZ;
+      count++;
       
       Serial.println(String(gX) + "," + String(gY) + "," + String(gZ));
-      amaount++;
+      amount++;
     }
   }
   else {
@@ -112,6 +126,7 @@ void loop() {
       Serial.println("maxX: " + String(maxX) + ", minX: " + String(minX));
       Serial.println("maxY: " + String(maxY) + ", minY: " + String(minY));
       Serial.println("maxZ: " + String(maxZ) + ", minZ: " + String(minZ));
+      Serial.println("averageX: " + String(averageX/count) + " averageY: " + String(averageY/count) + " averageZ: " + String(averageZ/count));
       canLoop = false;
     }
   }
@@ -132,6 +147,6 @@ void loop() {
 
   //Serial.print("\tApproxAltitude(m): ");
   //Serial.print(bme.readAltitude(1013.25)); // this should be adjusted to your local forcase
-  delay(10);
+  delay(1);
   //Serial.println(""); // Add an empty line. This text was added here from my tablet.
   }
