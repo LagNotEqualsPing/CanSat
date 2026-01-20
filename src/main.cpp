@@ -53,6 +53,10 @@ void loop() {
     Serial.println("\tgY: " + String(gY));
     Serial.println("\tgZ: " + String(gZ));
 
+    Serial.println("\told gX: " + String(oldGX));
+    Serial.println("\told gY: " + String(oldGY));
+    Serial.println("\told gZ: " + String(oldGZ));
+
     Serial.println("\tdeltaX: " + String(gX - oldGX));
     Serial.println("\tdeltaY: " + String(gY - oldGY));
     Serial.println("\tdeltaZ: " + String(gZ - oldGZ));
@@ -81,6 +85,6 @@ void loop() {
 
   //Serial.print("\tApproxAltitude(m): ");
   //Serial.print(bme.readAltitude(1013.25)); // this should be adjusted to your local forcase
-  delay(10000);
+  delay(5000);
   //Serial.println(""); // Add an empty line. This text was added here from my tablet.
   }
