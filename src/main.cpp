@@ -7,9 +7,9 @@ Adafruit_BMP280 bme; // I2C
 MPU9250_asukiaaa mySensor;
 float aX, aY, aZ, aSqrt, gX, gY, gZ, mDirection, mX, mY, mZ;
 
-float offSetX = 0.77; //ezt vonva ki a gX böl
-float offSetY = 3.44; //ezt vonva ki a gY bol
-float offSetZ = 0.40; //ezt vonva ki a gZ böl
+float offSetX = 0.77; //ezt vonja ki a gX böl
+float offSetY = 3.44; //ezt vonja ki a gY bol
+float offSetZ = 0.40; //ezt vonja ki a gZ böl
 
 float minX, maxX, minY, maxY, minZ, maxZ;
 
