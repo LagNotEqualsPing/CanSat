@@ -123,9 +123,9 @@ void loop() {
   }
   else {
     if (canLoop) {
-      Serial.println("maxX: " + String(maxX) + ", minX: " + String(minX));
-      Serial.println("maxY: " + String(maxY) + ", minY: " + String(minY));
-      Serial.println("maxZ: " + String(maxZ) + ", minZ: " + String(minZ));
+      Serial.println("maxX: " + String(maxX) + ", minX: " + String(minX) + ", deltaX: " + String(maxX - minX));
+      Serial.println("maxY: " + String(maxY) + ", minY: " + String(minY) + ", deltaY: " + String(maxY - minY));
+      Serial.println("maxZ: " + String(maxZ) + ", minZ: " + String(minZ) + ", deltaZ: " + String(maxZ - minZ));
       Serial.println("averageX: " + String(averageX/count) + " averageY: " + String(averageY/count) + " averageZ: " + String(averageZ/count));
       canLoop = false;
     }
@@ -147,6 +147,6 @@ void loop() {
 
   //Serial.print("\tApproxAltitude(m): ");
   //Serial.print(bme.readAltitude(1013.25)); // this should be adjusted to your local forcase
-  delay(1);
+  //delay(1);
   //Serial.println(""); // Add an empty line. This text was added here from my tablet.
   }
