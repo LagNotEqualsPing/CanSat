@@ -9,56 +9,55 @@ float aX, aY, aZ, aSqrt, gX, gY, gZ, mDirection, mX, mY, mZ;
 
 float offSetY = 3.44;
 
-float tStart = millis();
+long lastTime;
 
 void setup() {
   Serial.begin(9600);
 
   bme.begin();
-  //mySensor.beginAccel();
+  mySensor.beginAccel();
   mySensor.beginGyro();
-  //mySensor.beginMag();
+  mySensor.beginMag();
 
   // You can set your own offset for mag values
   // mySensor.magXOffset = -50;
   // mySensor.magYOffset = -55;
   // mySensor.magZOffset = -10;
 
-//test branch creation
 
   if (!bme.begin(0x76)) {
     Serial.println("BMP280 not found! Check wiring.");
     while (1);
   }
-  tStart = millis();
+  lastTime = millis();
 }
 
 
-float currentY = 0;
-int i;
 
-float oldTime = 0;
 
 float alpha = 0.98;  // gyro trust factor
 
 float roll =0;
+float pitch = 0;
+float yaw = 0;
 
 void loop() {
 
-  //if (mySensor.accelUpdate() == 0) {
-    //aX = mySensor.accelX();
-    //aY = mySensor.accelY();
-    //aZ = mySensor.accelZ();
+  float dt = (millis() - lastTime) / 1000.0;
+  lastTime = millis();
+
+  if (mySensor.accelUpdate() == 0) {
+    aX = mySensor.accelX();
+    aY = mySensor.accelY();
+    aZ = mySensor.accelZ();
    
-  //}
+  }
 
   
   if (mySensor.gyroUpdate() == 0) {
     gX = mySensor.gyroX();
     gY = mySensor.gyroY();
     gZ = mySensor.gyroZ();
-    //Serial.println("\tgyroX: " + String(gX));
-    //Serial.println("\tgyroY: " + String(gY));
   
     gY = gY - offSetY;
 
@@ -66,35 +65,38 @@ void loop() {
       gY = 0;
     }
     
-    roll = roll + (millis() - tStart) /1000 * gY;
-    //Serial.println((millis() - tStart)/1000, 3);
-    tStart = millis();
-    //Serial.println(tStart);
-    Serial.println(roll, 5);
+    float alpha = 0.98;
+    float accelRoll  = atan2(aY, aZ) * 180.0 / PI;
+    roll  = alpha * (roll  + gX * dt) + (1 - alpha) * accelRoll;
 
-    /*if (gY < 1 and gY > -1) {
-      gY = 0;
-    }
+    float accelPitch = atan2(-aX, sqrt(aY * aY + aZ * aZ)) * 180.0 / PI;
+    pitch = alpha * (pitch + gY * dt) + (1 - alpha) * accelPitch;
+    
 
-    currentY += gY;
+    //Serial.println(pitch, 5);
 
-    while (currentY > 360) {
-      currentY -= 360;
-    }
-    while (currentY < -360) {
-      currentY += 360;
-    }
-    i++;
-    if (i >= 1000) {
-      Serial.println(currentY);
-      i = 0;
-    }*/
   }
+
+  if (mySensor.magUpdate() == 0) {
+    mX = mySensor.magX();
+    mY = mySensor.magY();
+    mZ = mySensor.magZ();
+
+    float rollRad = roll * PI / 180.0;
+    float pitchRad = pitch * PI / 180.0;
+    float mx = mX * cos(pitchRad) + mZ * sin(pitchRad);
+    float my = mX * sin(rollRad) * sin(pitchRad) + mY * cos(rollRad) - mZ * sin(rollRad) * cos(pitchRad);
+    float magYaw = atan2(my, mx) * 180.0 / PI;
+
+    yaw = alpha * (yaw + gZ * dt) + (1 - alpha) * magYaw;
+    //Serial.print("\tRoll: "); Serial.print(roll, 2);
+    //Serial.print("\tPitch: "); Serial.print(pitch, 2);
+    Serial.print("\tYaw: "); Serial.println(yaw, 2);
+
+  }
+
   
     
-  
-  
-
   /*
   
   Serial.print("\tTemperature(*C): ");
@@ -106,10 +108,5 @@ void loop() {
   */
   
   //Serial.println("-----------------------------------");
-  
 
-  //Serial.print("\tApproxAltitude(m): ");
-  //Serial.print(bme.readAltitude(1013.25)); // this should be adjusted to your local forcase
-  //delay();
-  //Serial.println(""); // Add an empty line. This text was added here from my tablet.
   }
