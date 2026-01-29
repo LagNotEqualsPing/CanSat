@@ -1,6 +1,7 @@
 
 #include <MPU9250_asukiaaa.h>
 #include <Adafruit_BMP280.h>
+#include <Wire.h>
 
 
 Adafruit_BMP280 bme; // I2C
@@ -19,7 +20,7 @@ float yaw = 0;
 
 void setup() {
   Serial.begin(9600);
-
+  Wire.begin();
   bme.begin();
   mySensor.beginAccel();
   mySensor.beginGyro();
@@ -36,6 +37,7 @@ void setup() {
     while (1);
   }
   lastTime = millis();
+  //Serial.println("debug");
 }
 
 struct gyroscopeData
@@ -100,17 +102,29 @@ gyroscopeData gyroscope() {
 }
 
 
+float readTMP117() {
+  Wire.beginTransmission(0x48);
+  Wire.write(0x00);
+  Wire.endTransmission();
+
+  Wire.requestFrom(0x48, 2);
+
+  int raw = Wire.read() << 8;
+  raw |= Wire.read();
+
+  return raw * 0.0078125;
+}
 
 
 void loop() {
 
-  gyroscopeData gyroData = gyroscope();
+  //gyroscopeData gyroData = gyroscope();
+  float TMP117_data = readTMP117();
 
-  Serial.print("\tRoll: "); Serial.print(gyroData.roll, 2);
-  Serial.print("\tPitch: "); Serial.print(gyroData.pitch, 2);
-  Serial.print("\tYaw: "); Serial.println(gyroData.yaw, 2);
-
-    
+  //Serial.print("\tRoll: "); Serial.print(gyroData.roll, 2);
+  //Serial.print("\tPitch: "); Serial.print(gyroData.pitch, 2);
+  //Serial.print("\tYaw: "); Serial.println(gyroData.yaw, 2);
+  Serial.println(TMP117_data);
   /*
   
   Serial.print("\tTemperature(*C): ");
