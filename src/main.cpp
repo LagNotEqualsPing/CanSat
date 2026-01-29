@@ -11,6 +11,12 @@ float offSetY = 3.44;
 
 long lastTime;
 
+float alpha = 0.98;  // gyro trust factor
+
+float roll =0;
+float pitch = 0;
+float yaw = 0;
+
 void setup() {
   Serial.begin(9600);
 
@@ -32,17 +38,13 @@ void setup() {
   lastTime = millis();
 }
 
+struct gyroscopeData
+{
+  float roll, pitch, yaw;
+};
 
 
-
-float alpha = 0.98;  // gyro trust factor
-
-float roll =0;
-float pitch = 0;
-float yaw = 0;
-
-void loop() {
-
+gyroscopeData gyroscope() {
   float dt = (millis() - lastTime) / 1000.0;
   lastTime = millis();
 
@@ -53,7 +55,6 @@ void loop() {
    
   }
 
-  
   if (mySensor.gyroUpdate() == 0) {
     gX = mySensor.gyroX();
     gY = mySensor.gyroY();
@@ -73,8 +74,6 @@ void loop() {
     pitch = alpha * (pitch + gY * dt) + (1 - alpha) * accelPitch;
     
 
-    //Serial.println(pitch, 5);
-
   }
 
   if (mySensor.magUpdate() == 0) {
@@ -89,13 +88,28 @@ void loop() {
     float magYaw = atan2(my, mx) * 180.0 / PI;
 
     yaw = alpha * (yaw + gZ * dt) + (1 - alpha) * magYaw;
-    //Serial.print("\tRoll: "); Serial.print(roll, 2);
-    //Serial.print("\tPitch: "); Serial.print(pitch, 2);
-    Serial.print("\tYaw: "); Serial.println(yaw, 2);
+    
 
   }
 
-  
+  //Serial.print("\tRoll: "); Serial.print(roll, 2);
+  //Serial.print("\tPitch: "); Serial.print(pitch, 2);
+  //Serial.print("\tYaw: "); Serial.println(yaw, 2);
+  return {roll, pitch, yaw};
+
+}
+
+
+
+
+void loop() {
+
+  gyroscopeData gyroData = gyroscope();
+
+  Serial.print("\tRoll: "); Serial.print(gyroData.roll, 2);
+  Serial.print("\tPitch: "); Serial.print(gyroData.pitch, 2);
+  Serial.print("\tYaw: "); Serial.println(gyroData.yaw, 2);
+
     
   /*
   
