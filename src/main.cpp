@@ -19,6 +19,9 @@ float alpha = 0.98;  // gyro trust factor
 #define TXD_PIN 2
 #define RXD_PIN 15
 
+#define SCL 22
+#define SDA 23
+
 float roll =0;
 float pitch = 0;
 float yaw = 0;
@@ -57,7 +60,7 @@ void setupLoRa(){
   delay(1500);
   clearLoRaBuffer();
   delay(2000);
-  sendBTCommand("sys get ver");
+  //sendBTCommand("sys get ver");
   sendBTCommand("sys reset");
   delay(1000);
   //sendBTCommand("mac pause");
@@ -72,23 +75,27 @@ void setupLoRa(){
 
 void setup() {
   Serial.begin(115200);
-  //Wire.begin();
-  //bme.begin();
-  //mySensor.beginAccel();
-  //mySensor.beginGyro();
-  //mySensor.beginMag();
-
-  // You can set your own offset for mag values
-  // mySensor.magXOffset = -50;
-  // mySensor.magYOffset = -55;
-  // mySensor.magZOffset = -10;
-
+  Serial.println("starting");
+  Wire.begin(SDA, SCL);
+  bme.begin(0x76);
   /*
   if (!bme.begin(0x76)) {
     Serial.println("BMP280 not found! Check wiring.");
     while (1);
   }
   */
+  mySensor.beginAccel();
+  mySensor.beginGyro();
+  mySensor.beginMag();
+
+  // You can set your own offset for mag values
+  // mySensor.magXOffset = -50;
+  // mySensor.magYOffset = -55;
+  // mySensor.magZOffset = -10;
+
+  
+  
+  
   lastTime = millis();
   //Serial.println("debug");
   LoRaSerial.begin(115200, SERIAL_8N1, RXD_PIN, TXD_PIN);
@@ -175,26 +182,33 @@ float readTMP117() {
 
 void loop() {
 
-  //gyroscopeData gyroData = gyroscope();
-  //float TMP117_data = readTMP117();
-
+  gyroscopeData gyroData = gyroscope();
+  float TMP117_data = readTMP117();
+  String TMP117_data_string = String(TMP117_data);
+  TMP117_data_string.replace(".", "c");
   //Serial.print("\tRoll: "); Serial.print(gyroData.roll, 2);
   //Serial.print("\tPitch: "); Serial.print(gyroData.pitch, 2);
   //Serial.print("\tYaw: "); Serial.println(gyroData.yaw, 2);
   //Serial.println(TMP117_data);
   /*
   
-
   Serial.print("\tTemperature(*C): ");
   Serial.print(bme.readTemperature());
 
   Serial.print("\tPressure(Inches(Hg)): ");
   Serial.print(bme.readPressure()/3377);
-
   */
 
-  sendBTCommand("radio tx 123 1");
-  Serial.println("sent");
+  String BMPtemperature = String(bme.readTemperature());
+  BMPtemperature.replace(".", "c");
+
+  String BMEpressure = String(bme.readPressure());
+  BMEpressure.replace(".", "c");
+
+  sendATCommand("radio tx " + BMEpressure + "a" + BMPtemperature + "a" + TMP117_data_string + " 1"); //radio_rx a14c5230
+  Serial.println("radio tx " + BMPtemperature + "a" + TMP117_data_string + " 1");
+  Serial.println(BMPtemperature);
+  //Serial.println("sent " + TMP117_data_string);
   delay(1000);
   
   //Serial.println("-----------------------------------");
