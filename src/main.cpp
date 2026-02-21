@@ -184,8 +184,6 @@ void loop() {
 
   gyroscopeData gyroData = gyroscope();
   float TMP117_data = readTMP117();
-  String TMP117_data_string = String(TMP117_data);
-  TMP117_data_string.replace(".", "c");
   //Serial.print("\tRoll: "); Serial.print(gyroData.roll, 2);
   //Serial.print("\tPitch: "); Serial.print(gyroData.pitch, 2);
   //Serial.print("\tYaw: "); Serial.println(gyroData.yaw, 2);
@@ -198,18 +196,15 @@ void loop() {
   Serial.print("\tPressure(Inches(Hg)): ");
   Serial.print(bme.readPressure()/3377);
   */
+  //pressure,temperature1,temperature2,aX,aY,aZ,gX,gY,gZ,mX,mY,mZ,roll,pitch,yaw
+  String message = String(bme.readPressure()) + "a" + String(bme.readTemperature()) + "a" + String(TMP117_data) + "a" + String(mySensor.accelX())+ "a" + String(mySensor.accelY())+ "a" + String(mySensor.accelZ())+ "a" + String(mySensor.gyroX())+ "a" + String(mySensor.gyroY())+ "a" + String(mySensor.gyroZ())+ "a" + String(mySensor.magX())+ "a" + String(mySensor.magY())+ "a" + String(mySensor.magZ())+ "a" + String(gyroData.roll)+ "a" + String(gyroData.pitch)+ "a" + String(gyroData.yaw);
 
-  String BMPtemperature = String(bme.readTemperature());
-  BMPtemperature.replace(".", "c");
-
-  String BMEpressure = String(bme.readPressure());
-  BMEpressure.replace(".", "c");
-
-  sendATCommand("radio tx " + BMEpressure + "a" + BMPtemperature + "a" + TMP117_data_string + " 1"); //radio_rx a14c5230
-  Serial.println("radio tx " + BMPtemperature + "a" + TMP117_data_string + " 1");
-  Serial.println(BMPtemperature);
+  message.replace(".", "c");
+  message.replace("-", "b");
+  sendATCommand("radio tx " + message + " 1"); //radio_rx a14c5230
+  Serial.println("radio tx " + message + " 1");
   //Serial.println("sent " + TMP117_data_string);
-  delay(1000);
+  delay(100);
   
   //Serial.println("-----------------------------------");
 
