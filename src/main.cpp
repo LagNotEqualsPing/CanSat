@@ -197,7 +197,7 @@ void loop() {
   Serial.print(bme.readPressure()/3377);
   */
   //pressure,temperature1,temperature2,aX,aY,aZ,gX,gY,gZ,mX,mY,mZ,roll,pitch,yaw
-  String message = String(bme.readPressure()) + "a" + String(bme.readTemperature()) + "a" + String(TMP117_data) + "a" + String(mySensor.accelX())+ "a" + String(mySensor.accelY())+ "a" + String(mySensor.accelZ())+ "a" + String(mySensor.gyroX())+ "a" + String(mySensor.gyroY())+ "a" + String(mySensor.gyroZ())+ "a" + String(mySensor.magX())+ "a" + String(mySensor.magY())+ "a" + String(mySensor.magZ())+ "a" + String(gyroData.roll)+ "a" + String(gyroData.pitch)+ "a" + String(gyroData.yaw);
+  String message = String(bme.readPressure()) + "a" + String(bme.readTemperature()) + "a" + String(TMP117_data) + "a" + String(mySensor.accelX())+ "a" + String(mySensor.accelY())+ "a" + String(mySensor.accelZ())+ "a" + String(mySensor.gyroX())+ "a" + String(mySensor.gyroY())+ "a" + String(mySensor.gyroZ())+ "a" + String(mySensor.magX())+ "a" + String(mySensor.magY())+ "a" + String(mySensor.magZ())+ "a" + String(gyroData.roll)+ "a" + String(gyroData.pitch)+ "a" + String(gyroData.yaw) + "a" + String(millis());
 
   message.replace(".", "c");
   message.replace("-", "b");
