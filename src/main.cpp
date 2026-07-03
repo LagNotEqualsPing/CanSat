@@ -1,4 +1,3 @@
-
 #include <MPU9250_asukiaaa.h>
 #include <Adafruit_BMP280.h>
 #include <Wire.h>
@@ -16,11 +15,8 @@ long lastTime;
 
 float alpha = 0.98;  // gyro trust factor
 
-#define TXD_PIN 2
-#define RXD_PIN 15
-
-#define SCL 22
-#define SDA 23
+#define SCL 12 //22
+#define SDA 13 //23
 
 float roll =0;
 float pitch = 0;
@@ -74,8 +70,8 @@ void setupLoRa(){
 }
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("starting");
+  // Serial.begin(115200);
+  // Serial.println("starting");
   Wire.begin(SDA, SCL);
   bme.begin(0x76);
   /*
@@ -98,7 +94,7 @@ void setup() {
   
   lastTime = millis();
   //Serial.println("debug");
-  LoRaSerial.begin(115200, SERIAL_8N1, RXD_PIN, TXD_PIN);
+  LoRaSerial.begin(115200, SERIAL_8N1, 3, 1);
   //Serial.println(LoRaSerial.available());
   //Serial.println("calling setupLoRa");
   setupLoRa();
@@ -202,7 +198,7 @@ void loop() {
   message.replace(".", "c");
   message.replace("-", "b");
   sendATCommand("radio tx " + message + " 1"); //radio_rx a14c5230
-  Serial.println("radio tx " + message + " 1");
+  // Serial.println("radio tx " + message + " 1");
   //Serial.println("sent " + TMP117_data_string);
   delay(100);
   
