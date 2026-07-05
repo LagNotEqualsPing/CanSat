@@ -15,8 +15,13 @@ long lastTime;
 
 float alpha = 0.98;  // gyro trust factor
 
-#define SCL 12 //22
-#define SDA 13 //23
+/*
+#define SCL 12 //12
+#define SDA 13 //13
+*/
+
+#define RX 12 //3
+#define TX 13 //1
 
 float roll =0;
 float pitch = 0;
@@ -56,7 +61,7 @@ void setupLoRa(){
   delay(1500);
   clearLoRaBuffer();
   delay(2000);
-  //sendBTCommand("sys get ver");
+  sendBTCommand("sys get ver");
   sendBTCommand("sys reset");
   delay(1000);
   //sendBTCommand("mac pause");
@@ -70,19 +75,19 @@ void setupLoRa(){
 }
 
 void setup() {
-  // Serial.begin(115200);
-  // Serial.println("starting");
-  Wire.begin(SDA, SCL);
-  bme.begin(0x76);
+  Serial.begin(115200);
+  Serial.println("starting");
+  // Wire.begin(SDA, SCL);
+  // bme.begin(0x76);
   /*
   if (!bme.begin(0x76)) {
     Serial.println("BMP280 not found! Check wiring.");
     while (1);
   }
   */
-  mySensor.beginAccel();
-  mySensor.beginGyro();
-  mySensor.beginMag();
+  // mySensor.beginAccel();
+  // mySensor.beginGyro();
+  // mySensor.beginMag();
 
   // You can set your own offset for mag values
   // mySensor.magXOffset = -50;
@@ -94,7 +99,7 @@ void setup() {
   
   lastTime = millis();
   //Serial.println("debug");
-  LoRaSerial.begin(115200, SERIAL_8N1, 3, 1);
+  LoRaSerial.begin(115200, SERIAL_8N1, RX, TX);
   //Serial.println(LoRaSerial.available());
   //Serial.println("calling setupLoRa");
   setupLoRa();
@@ -178,8 +183,8 @@ float readTMP117() {
 
 void loop() {
 
-  gyroscopeData gyroData = gyroscope();
-  float TMP117_data = readTMP117();
+  // gyroscopeData gyroData = gyroscope();
+  // float TMP117_data = readTMP117();
   //Serial.print("\tRoll: "); Serial.print(gyroData.roll, 2);
   //Serial.print("\tPitch: "); Serial.print(gyroData.pitch, 2);
   //Serial.print("\tYaw: "); Serial.println(gyroData.yaw, 2);
@@ -193,12 +198,13 @@ void loop() {
   Serial.print(bme.readPressure()/3377);
   */
   //pressure,temperature1,temperature2,aX,aY,aZ,gX,gY,gZ,mX,mY,mZ,roll,pitch,yaw
-  String message = String(bme.readPressure()) + "a" + String(bme.readTemperature()) + "a" + String(TMP117_data) + "a" + String(mySensor.accelX())+ "a" + String(mySensor.accelY())+ "a" + String(mySensor.accelZ())+ "a" + String(mySensor.gyroX())+ "a" + String(mySensor.gyroY())+ "a" + String(mySensor.gyroZ())+ "a" + String(mySensor.magX())+ "a" + String(mySensor.magY())+ "a" + String(mySensor.magZ())+ "a" + String(gyroData.roll)+ "a" + String(gyroData.pitch)+ "a" + String(gyroData.yaw) + "a" + String(millis());
+  // String message = String(bme.readPressure()) + "a" + String(bme.readTemperature()) + "a" + String(TMP117_data) + "a" + String(mySensor.accelX())+ "a" + String(mySensor.accelY())+ "a" + String(mySensor.accelZ())+ "a" + String(mySensor.gyroX())+ "a" + String(mySensor.gyroY())+ "a" + String(mySensor.gyroZ())+ "a" + String(mySensor.magX())+ "a" + String(mySensor.magY())+ "a" + String(mySensor.magZ())+ "a" + String(gyroData.roll)+ "a" + String(gyroData.pitch)+ "a" + String(gyroData.yaw) + "a" + String(millis());
 
-  message.replace(".", "c");
-  message.replace("-", "b");
+  // message.replace(".", "c");
+  // message.replace("-", "b");
+  String message = "123abc";
   sendATCommand("radio tx " + message + " 1"); //radio_rx a14c5230
-  // Serial.println("radio tx " + message + " 1");
+  Serial.println("radio tx " + message + " 1");
   //Serial.println("sent " + TMP117_data_string);
   delay(100);
   
