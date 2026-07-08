@@ -2,11 +2,14 @@
 #include <Adafruit_BMP280.h>
 #include <Wire.h>
 #include <HardwareSerial.h>
+#include <FS.h>
+#include <SD_MMC.h>
+#include <esp32cam.h>
 
 
 Adafruit_BMP280 bme; // I2C
 MPU9250_asukiaaa mySensor;
-HardwareSerial LoRaSerial(1); //esp32-nek ez kell(elmeletileg)
+HardwareSerial LoRaSerial(0); //1
 float aX, aY, aZ, aSqrt, gX, gY, gZ, mDirection, mX, mY, mZ;
 
 float offSetY = 3.44;
@@ -15,13 +18,13 @@ long lastTime;
 
 float alpha = 0.98;  // gyro trust factor
 
-/*
-#define SCL 12 //12
-#define SDA 13 //13
-*/
 
-#define RX 12 //3
-#define TX 13 //1
+#define SCL 12 //12 0
+#define SDA 13 //13 16
+
+
+#define RX 3 //3
+#define TX 1 //1
 
 float roll =0;
 float pitch = 0;
@@ -74,9 +77,75 @@ void setupLoRa(){
   sendBTCommand("radio set sf sf7"); // same for tx rx sf8
 }
 
+const auto RES = esp32cam::Resolution::find(640,480); //1600, 1200
+
+void init_cam() {
+    using namespace esp32cam;
+    Config cfg;
+    cfg.setPins(pins::AiThinker);
+    cfg.setResolution(RES);
+    cfg.setJpeg(80);
+    Serial.printf("Heap: %u\n", ESP.getFreeHeap());
+    Serial.printf("PSRAM found: %s\n", psramFound() ? "YES" : "NO");
+    Serial.printf("PSRAM size: %u\n", ESP.getPsramSize());
+    bool ok = Camera.begin(cfg);
+    Serial.println(ok ? "CAMERA OK" : "CAMERA FAIL");
+}
+
+void take_picture() {
+    static int cnt = 0;
+    auto frame = esp32cam::capture();
+    if (frame == nullptr) {
+        Serial.println("Capture failed.");
+        return;
+    }
+    String path = "/img" + String(cnt++) + ".jpg";
+    File file = SD_MMC.open(path.c_str(), FILE_WRITE);
+    if (!file) {
+        Serial.println("Failed to open file.");
+        return;
+    }
+    frame->writeTo(file);
+    file.close();
+}
+
+void write_to_SD_card_overwrite(String message) {
+    String path = "/data.txt";
+    File file = SD_MMC.open(path, FILE_WRITE);
+
+    if (!file) {
+        Serial.println("failed to open file");
+        return;
+    }
+    if (file.println(message)) {
+        Serial.println("File written.");
+    }
+    else {
+        Serial.println("Write failed.");
+    }
+    file.close();
+}
+
+void append_to_file(String message) {
+    String path = "/data.txt";
+    File file = SD_MMC.open(path, FILE_APPEND);
+
+    if (!file) {
+        Serial.println("failed to open file");
+        return;
+    }
+    if (file.println(message)) {
+        Serial.println("File written.");
+    }
+    else {
+        Serial.println("Write failed.");
+    }
+    file.close();
+}
+
 void setup() {
-  Serial.begin(115200);
-  Serial.println("starting");
+  // Serial.begin(115200);
+  // Serial.println("starting");
   // Wire.begin(SDA, SCL);
   // bme.begin(0x76);
   /*
@@ -103,6 +172,18 @@ void setup() {
   //Serial.println(LoRaSerial.available());
   //Serial.println("calling setupLoRa");
   setupLoRa();
+
+  if (!SD_MMC.begin("/sdcard", true)) {
+        // Serial.println("SD card mount failed.");
+        return;
+  }
+  if (SD_MMC.cardType() == CARD_NONE) {
+        // Serial.println("No SD card.");
+  }
+
+  write_to_SD_card_overwrite("Hello world!");
+  init_cam();
+  delay(1000);
 }
 
 struct gyroscopeData
@@ -203,10 +284,12 @@ void loop() {
   // message.replace(".", "c");
   // message.replace("-", "b");
   String message = "123abc";
-  sendATCommand("radio tx " + message + " 1"); //radio_rx a14c5230
+  append_to_file(message);
+  take_picture();
+  sendATCommand("radio tx " + message + " 1");
   Serial.println("radio tx " + message + " 1");
   //Serial.println("sent " + TMP117_data_string);
-  delay(100);
+  delay(1000);
   
   //Serial.println("-----------------------------------");
 
