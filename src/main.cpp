@@ -5,11 +5,13 @@
 #include <FS.h>
 #include <SD_MMC.h>
 #include <esp32cam.h>
+#include <SparkFun_u-blox_GNSS_v3.h>
 
 
-Adafruit_BMP280 bme; // I2C
+Adafruit_BMP280 bme;
 MPU9250_asukiaaa mySensor;
-HardwareSerial LoRaSerial(0); //1
+HardwareSerial LoRaSerial(0);
+SFE_UBLOX_GNSS gps;
 float aX, aY, aZ, aSqrt, gX, gY, gZ, mDirection, mX, mY, mZ;
 
 float offSetY = 3.44;
@@ -19,19 +21,19 @@ long lastTime;
 float alpha = 0.98;  // gyro trust factor
 
 
-#define SCL 12 //12 0
-#define SDA 13 //13 16
+#define SCL 1
+#define SDA 13
 
 
-#define RX 3 //3
-#define TX 1 //1
+#define RX 0 
+#define TX 3
 
 float roll =0;
 float pitch = 0;
 float yaw = 0;
 
 void sendATCommand(String command) {
-  LoRaSerial.println(command); //\r\n\r\n\r\n"
+  LoRaSerial.println(command);
   delay(100);
   String Message = "";
   while (LoRaSerial.available()) {
@@ -41,7 +43,7 @@ void sendATCommand(String command) {
 }
 
 void sendBTCommand(String command) {
-  LoRaSerial.println(command); //\r\n\r\n\r\n"
+  LoRaSerial.println(command);
   Serial.println(command + "\r\n");
   delay(2000);
   String Message = "";
@@ -60,21 +62,18 @@ void clearLoRaBuffer() {
 }
 
 void setupLoRa(){
-  //radio set sync
   delay(1500);
   clearLoRaBuffer();
   delay(2000);
   sendBTCommand("sys get ver");
   sendBTCommand("sys reset");
   delay(1000);
-  //sendBTCommand("mac pause");
-  //delay(1000);
   sendBTCommand("radio set freq 863000000"); //868000000
   sendBTCommand("radio set mod lora");
-  sendBTCommand("radio set pwr 20"); // POWER 20dbm (jobb lenne tobb ) akarmi lehet a foldi aallomason
-  sendBTCommand("radio set sync a1"); // sync word (same for reciver and transmiter!!!)
-  sendBTCommand("radio set bw 125"); // same for transmitter and reciver!!
-  sendBTCommand("radio set sf sf7"); // same for tx rx sf8
+  sendBTCommand("radio set pwr 20");
+  sendBTCommand("radio set sync a1");
+  sendBTCommand("radio set bw 125");
+  sendBTCommand("radio set sf sf7");
 }
 
 const auto RES = esp32cam::Resolution::find(640,480); //1600, 1200
@@ -90,6 +89,10 @@ void init_cam() {
     Serial.printf("PSRAM size: %u\n", ESP.getPsramSize());
     bool ok = Camera.begin(cfg);
     Serial.println(ok ? "CAMERA OK" : "CAMERA FAIL");
+    if (!ok) {
+      String error_message = "e3";
+      sendATCommand("radio tx " + error_message + " 1"); 
+    }
 }
 
 void take_picture() {
@@ -97,12 +100,16 @@ void take_picture() {
     auto frame = esp32cam::capture();
     if (frame == nullptr) {
         Serial.println("Capture failed.");
+        String error_message = "e1";
+        sendATCommand("radio tx " + error_message + " 1");
         return;
     }
     String path = "/img" + String(cnt++) + ".jpg";
     File file = SD_MMC.open(path.c_str(), FILE_WRITE);
     if (!file) {
         Serial.println("Failed to open file.");
+        String error_message = "e2";
+        sendATCommand("radio tx " + error_message + " 1");
         return;
     }
     frame->writeTo(file);
@@ -110,7 +117,7 @@ void take_picture() {
 }
 
 void write_to_SD_card_overwrite(String message) {
-    String path = "/data.txt";
+    String path = "/data.csv";
     File file = SD_MMC.open(path, FILE_WRITE);
 
     if (!file) {
@@ -127,7 +134,7 @@ void write_to_SD_card_overwrite(String message) {
 }
 
 void append_to_file(String message) {
-    String path = "/data.txt";
+    String path = "/data.csv";
     File file = SD_MMC.open(path, FILE_APPEND);
 
     if (!file) {
@@ -146,42 +153,36 @@ void append_to_file(String message) {
 void setup() {
   // Serial.begin(115200);
   // Serial.println("starting");
-  // Wire.begin(SDA, SCL);
-  // bme.begin(0x76);
-  /*
-  if (!bme.begin(0x76)) {
-    Serial.println("BMP280 not found! Check wiring.");
-    while (1);
-  }
-  */
-  // mySensor.beginAccel();
-  // mySensor.beginGyro();
-  // mySensor.beginMag();
-
-  // You can set your own offset for mag values
-  // mySensor.magXOffset = -50;
-  // mySensor.magYOffset = -55;
-  // mySensor.magZOffset = -10;
-
-  
-  
   
   lastTime = millis();
-  //Serial.println("debug");
   LoRaSerial.begin(115200, SERIAL_8N1, RX, TX);
-  //Serial.println(LoRaSerial.available());
-  //Serial.println("calling setupLoRa");
   setupLoRa();
 
   if (!SD_MMC.begin("/sdcard", true)) {
         // Serial.println("SD card mount failed.");
         return;
   }
-  if (SD_MMC.cardType() == CARD_NONE) {
-        // Serial.println("No SD card.");
-  }
 
-  write_to_SD_card_overwrite("Hello world!");
+  write_to_SD_card_overwrite("pressure,temperature1,temperature2,aX,aY,aZ,gX,gY,gZ,mX,mY,mZ,roll,pitch,yaw,time,latitude,longitude,gpsaltitude,SIV");
+
+  Wire.begin(SDA, SCL);
+  // bme.begin(0x76);
+  
+  if (!bme.begin(0x76)) {
+    // Serial.println("BMP280 not found! Check wiring.");
+    sendATCommand("radio tx e7 1");
+  }
+  
+  mySensor.beginAccel();
+  mySensor.beginGyro();
+  mySensor.beginMag();
+
+  // mySensor.magXOffset = -50;
+  // mySensor.magYOffset = -55;
+  // mySensor.magZOffset = -10;
+
+  gps.begin();
+  gps.setNavigationFrequency(1);
   init_cam();
   delay(1000);
 }
@@ -240,9 +241,6 @@ gyroscopeData gyroscope() {
 
   }
 
-  //Serial.print("\tRoll: "); Serial.print(roll, 2);
-  //Serial.print("\tPitch: "); Serial.print(pitch, 2);
-  //Serial.print("\tYaw: "); Serial.println(yaw, 2);
   return {roll, pitch, yaw};
 
 }
@@ -261,36 +259,27 @@ float readTMP117() {
   return raw * 0.0078125;
 }
 
+int c = 0;
 
 void loop() {
-
-  // gyroscopeData gyroData = gyroscope();
-  // float TMP117_data = readTMP117();
-  //Serial.print("\tRoll: "); Serial.print(gyroData.roll, 2);
-  //Serial.print("\tPitch: "); Serial.print(gyroData.pitch, 2);
-  //Serial.print("\tYaw: "); Serial.println(gyroData.yaw, 2);
-  //Serial.println(TMP117_data);
-  /*
+  gyroscopeData gyroData = gyroscope();
+  float TMP117_data = readTMP117();
   
-  Serial.print("\tTemperature(*C): ");
-  Serial.print(bme.readTemperature());
-
-  Serial.print("\tPressure(Inches(Hg)): ");
-  Serial.print(bme.readPressure()/3377);
-  */
-  //pressure,temperature1,temperature2,aX,aY,aZ,gX,gY,gZ,mX,mY,mZ,roll,pitch,yaw
-  // String message = String(bme.readPressure()) + "a" + String(bme.readTemperature()) + "a" + String(TMP117_data) + "a" + String(mySensor.accelX())+ "a" + String(mySensor.accelY())+ "a" + String(mySensor.accelZ())+ "a" + String(mySensor.gyroX())+ "a" + String(mySensor.gyroY())+ "a" + String(mySensor.gyroZ())+ "a" + String(mySensor.magX())+ "a" + String(mySensor.magY())+ "a" + String(mySensor.magZ())+ "a" + String(gyroData.roll)+ "a" + String(gyroData.pitch)+ "a" + String(gyroData.yaw) + "a" + String(millis());
-
-  // message.replace(".", "c");
-  // message.replace("-", "b");
-  String message = "123abc";
+  //pressure,temperature1,temperature2,aX,aY,aZ,gX,gY,gZ,mX,mY,mZ,roll,pitch,yaw,time,Latitude,Longitude,gpsAltitude,SIV
+  String message = String(bme.readPressure()) + "," + String(bme.readTemperature()) + "," + String(TMP117_data) + "," + String(mySensor.accelX())+ "," + String(mySensor.accelY())+ "," + String(mySensor.accelZ())+ "," + String(mySensor.gyroX())+ "," + String(mySensor.gyroY())+ "," + String(mySensor.gyroZ())+ "," + String(mySensor.magX())+ "," + String(mySensor.magY())+ "," + String(mySensor.magZ())+ "," + String(gyroData.roll)+ "," + String(gyroData.pitch)+ "," + String(gyroData.yaw) + "," + String(millis()) + "," + String(gps.getLatitude()) + "," + String(gps.getLongitude()) + "," + String(gps.getAltitude()) + "," + String(gps.getSIV()) + "," + String(bme.readAltitude());
   append_to_file(message);
-  take_picture();
+  message.replace(",", "a");
+  message.replace(".", "c");
+  message.replace("-", "b");
   sendATCommand("radio tx " + message + " 1");
-  Serial.println("radio tx " + message + " 1");
-  //Serial.println("sent " + TMP117_data_string);
-  delay(1000);
-  
-  //Serial.println("-----------------------------------");
 
+  if (c > 9) {
+    take_picture();
+    c = 0;
   }
+  else {
+    c++;
+  }
+
+  delay(100);
+}
